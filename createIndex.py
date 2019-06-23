@@ -27,12 +27,14 @@ __total_scan_size= 0
 __total_files_list= dict()
 __stat_start_time=0
 __stat_scan_size=0
+__backup_start_time=0
 
 def __createIndexOfDirectory(rootDir,  dirName,  iname,  ts ):
     global __total_scan_size
     global __total_files_list
     global __stat_start_time
     global __stat_scan_size
+    global __backup_start_time
     
     # create a list of file and sub directories 
     # names in the given directory 
@@ -40,6 +42,9 @@ def __createIndexOfDirectory(rootDir,  dirName,  iname,  ts ):
     
     if __stat_start_time == 0:
         __stat_start_time= time.time()
+        
+    if __backup_start_time == 0:
+        __backup_start_time= time.time()
         
     # Iterate over all the entries
     for entry in listOfFile:
@@ -77,6 +82,17 @@ def __createIndexOfDirectory(rootDir,  dirName,  iname,  ts ):
             else:
                 print("\r\nskipping entry (allready present in index) " + entry)
 
+                
+            # store the current result as temporary result -- just in case something goes wrong, we can continue
+            backupDeltaTime= time.time() - __backup_start_time
+            if backupDeltaTime > 60:
+                # reset timer
+                __backup_start_time= time.time()
+                # execute backup
+                __writeIndexFile( rootDir,  iname, __total_files_list,  ts,  __PARTLY   )
+                __writeIndexFile( rootDir,  iname, __total_files_list,  ts,  __PARTLY+".dual"   )
+                print("automatic backup of index done")
+
             # stats
             __total_scan_size +=fsize
             __stat_scan_size += fsize
@@ -88,9 +104,6 @@ def __createIndexOfDirectory(rootDir,  dirName,  iname,  ts ):
             if deltaTime > 5:
                 # reset timer
                 __stat_start_time= time.time()
-                
-                # store the current result as temporary result -- just in case something goes wrong, we can continue
-                __writeIndexFile( rootDir,  iname, __total_files_list,  ts,  __PARTLY   )
 
                 # debug output
                 sizeInMb= __stat_scan_size/1024/1024

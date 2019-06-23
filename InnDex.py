@@ -5,20 +5,20 @@ if (sys.version_info < (3, 0)):
     exit(1)
     
 import createIndex
-#import procDuplicates
+import procDuplicates
 
 print("start app")
 
 
 dirName = '/home/tswaehn/Downloads'
 
-innDex= createIndex.new(dirName)
+#innDex= createIndex.new(dirName)
 
 innDex= createIndex.load(dirName)
 
 print("index done")    
 
-#procDuplicates.run( dirName,  innDex )
+procDuplicates.run( dirName,  innDex )
 
     
 print("app end")
