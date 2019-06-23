@@ -8,22 +8,23 @@ def md5(fname):
             hash_md5.update(chunk)
     return hash_md5.hexdigest()
     
-def outputJSON(fname,  list):    
+def writeListToJSON(fname,  obj):    
     import json
-    header={'fname':fname,  'type':'list'}
-    fileContainerData={'header':header,  'data':list}
+    basename= os.path.basename( fname )
+    # actually write to file
     with open(fname, 'w') as outfile:
-        json.dump(fileContainerData, outfile, ensure_ascii=False, indent=2)
+        json.dump(obj, outfile, ensure_ascii=False, indent=2)
 
-def inputJSON(fname):    
+def readListFromJSON(fname):    
     import json
+    # read from file
     with open(fname, 'r') as f:
-        fileContainerData = json.load(f)
-    header= fileContainerData['header']
-    list=fileContainerData['data']
-    return list
+        obj = json.load(f)
+        
+    # return data from JSON if header is ok
+    return obj
 
-def getListOfFiles(dirName):
+def createIndexOfDirectory(rootDir,  dirName):
     # create a list of file and sub directories 
     # names in the given directory 
     listOfFile = os.listdir(dirName)
@@ -34,34 +35,56 @@ def getListOfFiles(dirName):
         fullPath = os.path.join(dirName, entry)
         # If entry is a directory then get the list of files in this directory 
         if os.path.isdir(fullPath):
-            allFiles = allFiles + getListOfFiles(fullPath)
+            allFiles = allFiles + createIndexOfDirectory(rootDir,  fullPath)
         else:
             # create tuple for list
+            relpath=os.path.relpath(fullPath,  rootDir)
             md5sum= md5( fullPath )
-            tuple= {"fname":entry,  "dname":dirName, "md5":md5sum,  "fullpath":fullPath}
+            lastModTimeStamp= os.path.getmtime(fullPath)
+            st = os.stat(fullPath)
+            fsize= st.st_size
+            tuple= {"fname":entry, "fsize":fsize,  "lastmod":lastModTimeStamp, "md5":md5sum,  "rootname":rootDir,  "rname":relpath }
             # add to list
-            allFiles.append(tuple)
+            allFiles.append( tuple )
             # debug
             print(tuple)
                 
     return allFiles
 
-def findTuple(allFiles,  tuple):
+def findSameTupleByMd5(allFiles,  tuple):
     for entry in allFiles:
         if (entry["md5"] == tuple["md5"]):
-            if entry["fullpath"] != tuple["fullpath"]:
+            if entry['fname'] != tuple['fname']:
+                if entry["rname"] == tuple["rname"]:
+                    # ignore same file
+                    continue
+            else:
                 return entry
     
     return 0
     
-def findDuplicates(allFiles):
+def findSameTupleByNameAndDate(allFiles,  tuple):
+    for entry in allFiles:
+        if (entry["fname"] == tuple["fname"]):
+            if entry["fsize"] == tuple["fsize"]:
+                if entry["rname"] != tuple["rname"]:
+                    return entry
     
+    return 0
+
+    
+def execFindDuplicates( dirName,  innDex ):
+    fname = 'indexDuplicates.JSON'
+    fullpath=os.path.join(dirName, fname)
+    
+    allFiles= innDex['data']
     pairs=list()
     count=0
     for tuple in allFiles:
-        res= findTuple( allFiles,  tuple )
+        ##res= findSameTupleByMd5( innDex,  tuple )
+        res= findSameTupleByNameAndDate( allFiles,  tuple)
         if res==0:
-            print("nothing")
+            continue
         else:
             count += 1
             singlePair={"src":tuple,  "dst":res}
@@ -70,23 +93,68 @@ def findDuplicates(allFiles):
             print(tuple)
             print(res)
             
-    outputJSON('pairs.JSON',  pairs)
+    writeListToJSON(fullpath,  pairs)
     print("count:")
     print(count)
+
+def execNewIndex( dirName ):   
+    fname = 'index.JSON'
+    fullpath=os.path.join(dirName, fname)
     
-dirName = '/home/tswaehn/Downloads';
+    
+    # create index of files
+    allFiles= createIndexOfDirectory( dirName,  dirName )
+    
+    # prepare innDex object 
+    import time
+    ts = time.time()
+    header={'fname':fname,  'type':'list',  'listlen': len( allFiles ),  'version':'0.1',  'timestamp':ts}
+    innDex={'header':header,  'data':allFiles}
 
-print("hello")
+    # write list to file
+    writeListToJSON(fullpath,  innDex)
+    
+    return innDex
 
-allFiles= getListOfFiles( dirName )
-# write list to file
-outputJSON('allFiles.JSON',  allFiles)
-# read list from file
-allFiles= inputJSON('allFiles.JSON')
+def execLoadIndex( dirName  ):    
+    fname = 'index.JSON'
+    fullpath=os.path.join(dirName, fname)
+    
+    # read list from file
+    innDex= readListFromJSON(fullpath)
+    
+    # set header and data
+    header= innDex['header'];
+    data=innDex['data'];
+    
+   # check header and return empty list if header is invalids
+    if (header['fname'] != fname):
+        print("incorrect filename")
+        return set()
+    if (header['listlen'] != len( data ) ):
+        print("incorrect data length")
+        return set()
+    if (header['version'] != '0.1'):
+        print("incorrect version "+ header['version'])
+        return set()
+    
+    return innDex
+
+
+print("start app")
+
+dirName = '/home/tswaehn/Downloads'
+dirName= '/run/media/tswaehn/My Passport/data/backup_data/data';
+
+dirName= '/run/media/tswaehn/c587a5e7-5b5a-4c0c-857d-ba4cc1872b47/data/';
+
+innDex= execNewIndex(dirName)
+
+innDex= execLoadIndex(dirName)
 
 print("listing done")    
 
-findDuplicates( allFiles )
+##execFindDuplicates( dirName,  innDex )
 
     
 print("app end")
