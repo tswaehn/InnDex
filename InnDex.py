@@ -5,14 +5,12 @@ if (sys.version_info < (3, 0)):
     exit(1)
     
 import createIndex
-import procDuplicates
+#import procDuplicates
 
 print("start app")
 
 
 dirName = '/home/tswaehn/Downloads'
-##dirName= '/run/media/tswaehn/My Passport/data/backup_data/data';
-##dirName= '/run/media/tswaehn/c587a5e7-5b5a-4c0c-857d-ba4cc1872b47/data/';
 
 innDex= createIndex.new(dirName)
 
