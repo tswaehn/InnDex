@@ -10,7 +10,7 @@ def __md5(fname):
     return hash_md5.hexdigest()
     
 
-def createIndexOfDirectory(rootDir,  dirName):
+def __createIndexOfDirectory(rootDir,  dirName):
     # create a list of file and sub directories 
     # names in the given directory 
     listOfFile = os.listdir(dirName)
@@ -21,7 +21,7 @@ def createIndexOfDirectory(rootDir,  dirName):
         fullPath = os.path.join(dirName, entry)
         # If entry is a directory then get the list of files in this directory 
         if os.path.isdir(fullPath):
-            allFiles = allFiles + createIndexOfDirectory(rootDir,  fullPath)
+            allFiles = allFiles + __createIndexOfDirectory(rootDir,  fullPath)
         else:
             # create tuple for list
             relpath=os.path.relpath(fullPath,  rootDir)
@@ -45,7 +45,7 @@ def new( dirName ):
     
     
     # create index of files
-    allFiles= createIndexOfDirectory( dirName,  dirName )
+    allFiles= __createIndexOfDirectory( dirName,  dirName )
     
     # prepare innDex object 
     import time
