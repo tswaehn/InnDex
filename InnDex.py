@@ -5,23 +5,45 @@ if (sys.version_info < (3, 0)):
     exit(1)
     
 import createIndex
-import procDuplicates
+#import procDuplicates
+import procCompare
+import config
 
 print("start app")
 
+conf= config.load()
 
-dirName = '/home/tswaehn/Downloads'
-dirName= '/run/media/tswaehn/My Passport/data/backup_data/data';
-#dirName= '/run/media/tswaehn/c587a5e7-5b5a-4c0c-857d-ba4cc1872b47/data/';
-#dirName= '/home/tswaehn'
+# ---
+# update index
+if (config.get(conf, 'update') == 1):
+    dirList= config.get(conf, 'update_index')
+    if (dirList != None) and  (len(dirList) > 0):
+        for dirName in dirList:
+            print("start index - {s}".format(s=dirName))
+            createIndex.new(dirName)        
 
-innDex= createIndex.new(dirName)
 
-innDex= createIndex.load(dirName)
 
-print("index done")    
+#innDex= createIndex.load(dirName)
+
+if (config.get(conf, 'compare') == 1):
+    dirList= config.get(conf, 'proc_compare')
+    if (dirList != None) and  (len(dirList) ==2):
+        dir0= dirList["dir0"]
+        dir1= dirList["dir1"]
+
+        innDex0= createIndex.load(dir0)
+        innDex1= createIndex.load(dir1)
+
+        procCompare.run( innDex0,  innDex1 )
+
 
 #procDuplicates.run( dirName,  innDex )
 
+   
+    
+    
+    
+    
     
 print("app end")

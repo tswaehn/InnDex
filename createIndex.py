@@ -68,9 +68,9 @@ def __createIndexOfDirectory(rootDir,  dirName,  iname,  ts ):
             #
             dictHash= __getNameHash( relpath )
             
-            # check if the file has already been indexed in the partly index
-            presentEntry= __isPresent( __total_files_list,  entry,  fsize,  relpath ) 
-            if presentEntry== 0:
+            # check if the same file already been indexed in the partly index
+            sameEntry= __isSameFile( __total_files_list,  relpath,  fsize,  lastModTimeStamp  ) 
+            if sameEntry== 0:
                 # file is not yet present in index -- so add to index
                 
                 # creating the md5sum over the complete file is processing expensive
@@ -79,9 +79,6 @@ def __createIndexOfDirectory(rootDir,  dirName,  iname,  ts ):
                 tuple= {"fname":entry, "fsize":fsize,  "lastmod":lastModTimeStamp, "md5":md5sum,  "rootname":rootDir,  "rname":relpath }
                 # add to dict
                 __total_files_list[dictHash]=  tuple 
-            else:
-                print("\r\nskipping entry (allready present in index) " + entry)
-
                 
             # store the current result as temporary result -- just in case something goes wrong, we can continue
             backupDeltaTime= time.time() - __backup_start_time
@@ -101,7 +98,7 @@ def __createIndexOfDirectory(rootDir,  dirName,  iname,  ts ):
             deltaTime= (time.time() - __stat_start_time)
             
             # on timer threshold
-            if deltaTime > 5:
+            if deltaTime > 1:
                 # reset timer
                 __stat_start_time= time.time()
 
@@ -120,41 +117,60 @@ def __createIndexOfDirectory(rootDir,  dirName,  iname,  ts ):
         
     return 
 
-def __isPresent( partList,  fname,  fsize,  relpath ):   
+def __isSameFile( partList,  relpath,  fsize,  lastModTimeStamp  ):   
     if len(partList) == 0:
         return 0
         
     dictHash= __getNameHash( relpath )
     
     if dictHash in partList:
-        return partList[dictHash]
+        sameFile= partList[dictHash]
+        # check the details
+        if (sameFile['fsize'] != fsize):
+            return 0
+        if (sameFile['lastmod']  != lastModTimeStamp):
+            return 0
+        
+        return sameFile
     else:
         return 0
-    
-    
-def __getLatestIndexFile( dirName,  fname ):
+
+def __getAllIndexFiles( dirName,  fname):    
     fullpath=os.path.join(dirName, fname)
     listOfFiles = glob.glob(fullpath + '.*')
     if len(listOfFiles) == 0:
         return ""
+
+    # convert file list to tuple list for post processing
+    indexFileList= list()
+    for fullFileName in listOfFiles:
+        timestamp= os.path.getmtime(fullFileName)
+        basename= os.path.basename(fullFileName)
         
-    x= 0
-    b = 0
-    for entry in listOfFiles:
-        print (entry)
-        if x==0:
-            x= entry
-            b= os.path.getmtime(entry)
-            continue
-        # lastModTimeStamp
-        a= os.path.getmtime(entry)
-        if (a > b):
-            b= a
-            x= entry
+        if fullFileName.find( __PARTLY ) >= 0:
+            status= __PARTLY
+        else:
+            status= __FINAL
+            
+        tuple= {'fname':basename,  'rname':dirName,  'status':status,  'timestamp':timestamp}
+        indexFileList.append( tuple )
+        
+    # sort by timestamp
+    indexFileList.sort( key=lambda x:x['timestamp'])
+    return indexFileList
     
-    fname= os.path.basename( x )
-    print("loading file")
-    print(fname)
+def __getLatestIndexFile( dirName,  fname ):
+    
+    indexFileList= __getAllIndexFiles( dirName,  fname )
+    if len(indexFileList) == 0:
+        return ""
+    
+    # pick the last item
+    last= indexFileList[-1]
+    
+    fname= last['fname']
+    print("picking latest file [{s}]".format( s=fname) )
+    
     return fname
     
 
@@ -173,18 +189,17 @@ def __writeIndexFile(rootDir,  iname, allFiles,  ts,  status):
     # prepare innDex object 
     innDex={'header':header,  'data':allFiles}
 
+    print("indexing done -- writing final file")
     # write list to file
     indexReadWrite.write(indexFile,  innDex)
     
+    print("done - thanks ")
     return innDex
     
-def __readIndexFile( dirName,  iname ):
-    fname= __getLatestIndexFile( dirName,  iname )
-    if  fname == "":
-        return dict()
-        
+def __readIndexFile( dirName,  fname ):
     fullpath=os.path.join(dirName, fname)
     
+    print("reading index file {s}".format(s=fullpath) )
     # read list from file
     innDex= indexReadWrite.read(fullpath)
     
@@ -201,25 +216,35 @@ def __readIndexFile( dirName,  iname ):
         return dict()
     if (header['version'] != __FVERS):
         print("incorrect version "+ header['version'])
-        return dict()
-    
+        return dict()    
+        
     return innDex
-    
-    
+
+
+
 def new( dirName ):   
     global __total_files_list   # \TODO: try to avoid the global variable - replace by call-by-reference
+    
+    if os.path.exists( dirName ) == False:
+        print("err: path not existing {x}".format(x=dirName))
+        return
+    
     # get timestamp
     ts= time.time()
     
     # load most recent index and check if this is incomplete
-    partDex= __readIndexFile( dirName, __FNAME )
+    partDex= load( dirName )
     partList= dict()
 
     if len( partDex ) > 0:
         header= partDex['header']
         if  (header['status']  == __PARTLY):
             print("using partly index file " )            
-            partList= partDex['data']
+        else:
+            print("using last full index file ")
+        
+        # 
+        partList= partDex['data']
     
     if len(partList) == 0:
         print("no partly index file found")
@@ -239,6 +264,26 @@ def new( dirName ):
     
 
 def load( dirName  ):    
+
+    fname= __getLatestIndexFile( dirName,  __FNAME )
+    if  fname == "":
+        return dict()
+        
+    innDex= __readIndexFile( dirName,  fname )
     
-    innDex= __readIndexFile( dirName,  __FNAME  )
     return innDex    
+    
+    
+def getFullIndexFileList( dirName ):
+    tempList= __getAllIndexFiles( dirName,  __FNAME )
+
+    if len(tempList) == 0:
+        return list()
+        
+    # remove all partly
+    indexFileList= list()
+    for entry in tempList:
+        if (entry['status']  == __FINAL ):
+            indexFileList.append(entry)
+    
+    return indexFileList
