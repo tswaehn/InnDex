@@ -1,17 +1,16 @@
-import versionCheck
 import createIndex
 # import procDuplicates
 import procCompare
-import config
+import config.config as CFG
 
 print("start app")
 
-conf= config.load()
+job_config = CFG.Config("innDex.conf")
 
 # ---
 # update index
-if config.get(conf, 'update') == 1:
-    dirList = config.get(conf, 'update_index')
+if job_config.get('update') == 1:
+    dirList = job_config.get('update_index')
     if (dirList is not None) and (len(dirList) > 0):
         for dirName in dirList:
             print("start index - {s}".format(s=dirName))
@@ -20,8 +19,8 @@ if config.get(conf, 'update') == 1:
 
 # innDex= createIndex.load(dirName)
 
-if config.get(conf, 'compare') == 1:
-    dirList = config.get(conf, 'proc_compare')
+if job_config.get('compare') == 1:
+    dirList = job_config.get('proc_compare')
     if (dirList is not None) and (len(dirList) == 2):
         dir0 = dirList[0]
         dir1 = dirList[1]
