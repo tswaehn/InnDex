@@ -2,7 +2,7 @@ import createIndex
 # import procDuplicates
 import procCompare
 import config.config as cfg
-import readers.readers as readers
+import readers.main as readers
 
 print("start app")
 
@@ -38,8 +38,8 @@ if job_config.get('run_innDex') == 1:
     print('index enabled')
     dirname = job_config.get('innDex_dir')
 
-    innDex0 = createIndex.load(dirname)
-    readers.process_list(innDex0)
+    innDex = createIndex.load(dirname)
+    readers.exec_all(innDex)
 else:
     print('index disabled')
     job_config.set('run_innDex', 0)

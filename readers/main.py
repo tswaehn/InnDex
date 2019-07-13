@@ -7,7 +7,7 @@ def hello():
     print("hello reader")
 
 
-def process_list(innDex):
+def exec_all(innDex):
 
     ix = dict()
     proc_extension.run(innDex, ix)
