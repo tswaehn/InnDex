@@ -264,7 +264,7 @@ def new( dirName ):
     
 
 def load( dirName  ):    
-
+    print("loading dir {s}".format(s=dirName))
     fname= __getLatestIndexFile( dirName,  __FNAME )
     if  fname == "":
         return dict()

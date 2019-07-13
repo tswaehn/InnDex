@@ -11,12 +11,13 @@ def __compare( file0,  file1 ):
     
     return 1
 
+
 def run(innDex0,  innDex1):
-    pairs= list()
+    pairs = list()
     print("begin compare")
     
-    list0= innDex0['data']
-    list1= innDex1['data']
+    list0 = innDex0['data']
+    list1 = innDex1['data']
     
     count0=0
     count1=0

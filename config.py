@@ -1,27 +1,29 @@
 
 import indexReadWrite
 # const
-__CONFIG="innDex.conf.JSON"
-__CONFIG_VER="1.0"
+__CONFIG = "innDex.conf.JSON"
+__CONFIG_VER = "1.0"
+
 
 def load():
     global __CONFIG
     
     try:
-        config= indexReadWrite.read( __CONFIG )
+        config= indexReadWrite.read(__CONFIG)
     except FileNotFoundError:
         print("config not found")
         config= __createNewConfig()
         
         
     return config
-            
-def get( config,  key):            
+
+
+def get(config,  key):
     
     if key in config:
         return config[key]
     else:
-        set( config,  key,  None )
+        set(config,  key,  None)
         return config[key]
 
 
