@@ -12,9 +12,13 @@ def run(innDex, res):
         rname = rname.upper()
         rname = os.path.splitext(rname)[0]
 
-        tokens = re.split('[ |\\\\|\\.|\\-|_|\\(|\\)|\\[|\\]|\\/]', rname)
+        tokens = re.split('[\\ |\\\\|\\.|\\-|_|\\(|\\)|\\[|\\]|\\/]', rname)
 
         for token in tokens:
+            if len(token) == 0:
+                continue
+
+            # add token to result list
             __add(res, token, hashKey)
 
     return res
