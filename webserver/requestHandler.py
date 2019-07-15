@@ -101,7 +101,7 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
 
         text += self.url.path
         byte_str = text.encode('utf-8')
-        
+
         self._set_headers()
         self.wfile.write(byte_str)
 
@@ -117,9 +117,10 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
             self.wfile.write(f.read())
             text += "file loaded " + fullname
         else:
-            text += 'file not found ' + fullname
             self._set_headers()
-            self.wfile.write(b"unknown file")
+            data = self.__magic404()
+            self.wfile.write(data.encode('utf-8'))
+            text += 'file not found ' + fullname
 
         return text
 
@@ -134,5 +135,14 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
 
         mimetype = types.get(ext, 'text/html')
 
-
         return mimetype
+
+
+    def __magic404(self):
+
+        data = ""
+        data += "<h1>ooops 404</h1>"
+
+        return data
+
+
