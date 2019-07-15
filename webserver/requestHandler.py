@@ -2,7 +2,7 @@ from http.server import BaseHTTPRequestHandler
 import os
 from io import BytesIO
 import urllib
-
+from webserver import api
 
 class MyHTTPRequestHandler(BaseHTTPRequestHandler):
 
@@ -53,13 +53,11 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
         content_length = int(self.headers['Content-Length'])
         body = self.rfile.read(content_length)
 
-        self._set_headers()
+        api_ = api.API(body)
+        data = api_.run()
 
-        response = BytesIO()
-        response.write(b'This is POST request. ')
-        response.write(b'Received: ')
-        response.write(body)
-        self.wfile.write(response.getvalue())
+        self._set_headers()
+        self.wfile.write(data.encode('utf-8'))
 
 
     # url = ParseResult(scheme='', netloc='', path='/', params='', query='index=2', fragment='')

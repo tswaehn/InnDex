@@ -1,8 +1,17 @@
-<h1>tabindex ac canvas</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Python Webserver</title>
+</head>
+<body>
+
+<h1>Image loading test</h1>
 
 <img src="test.png">
 
 
+<h1>Form action test</h1>
 <form target="_blank" action="/api" method="POST" >
 
     <input type="radio" name="option" value="opt-1" checked> Check Option 1<br>
@@ -12,3 +21,34 @@
     <textarea name="Text1" cols="40" rows="5">some text here and there</textarea>
     <input type="submit" name="submit" value="send">
 </form>
+
+<h1>Javascript button test</h1>
+<p>
+    <div id="demo">demo response here</div>
+    <button onclick="clickMe()">click me</button>
+
+    <script>
+        function clickMe(){
+            data="this is the data from java script"
+            var request = new XMLHttpRequest();
+            request.addEventListener('load', function(event) {
+                if (request.status >= 200 && request.status < 300) {
+                    document.getElementById("demo").innerHTML = this.responseText;
+
+                    console.log(request.responseText);
+                } else {
+                    console.warn(request.statusText, request.responseText);
+                }
+            });
+
+            request.open("POST","/");
+            request.send(data);
+
+        }
+
+    </script>
+</p>
+
+
+</body>
+</html>
