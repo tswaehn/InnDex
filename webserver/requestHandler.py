@@ -107,14 +107,19 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
 
     def __load_file(self, fullname):
         text = ""
-        if os.path.exists(fullname):
+
+        try:
             f = open(fullname, mode="rb")
 
             mimetype = self.__get_mimetype(fullname)
+            if mimetype == '':
+                raise Exception('invalid mimetype')
+
             self._set_headers(mimetype)
             self.wfile.write(f.read())
             text += "file loaded " + fullname
-        else:
+
+        except:
             self._set_headers()
             data = self.__magic404()
             self.wfile.write(data.encode('utf-8'))
@@ -128,18 +133,24 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
         ext = ext.upper()
 
         types = {
-            '.PNG': 'image/png'
+            '.HTML': 'text/html',
+            '.PNG': 'image/png',
+            '.JS': 'text/javascript',
+            '.JPG': 'image/jpeg',
+            '.JPEG': 'image/jpeg',
+            '.CSS': 'text/css'
         }
 
-        mimetype = types.get(ext, 'text/html')
+        mimetype = types.get(ext, '')
 
         return mimetype
 
 
     def __magic404(self):
 
-        data = ""
-        data += "<h1>ooops 404</h1>"
+        data = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>404 - not found</title></head><body>'
+        data += '<h1>ooops 404</h1>'
+        data += '</body></html>'
 
         return data
 
