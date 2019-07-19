@@ -2,15 +2,28 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Python Webserver</title>
+    <title>InnDex Dashboard</title>
+
+    <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+    <script src="./js/ajax.js"></script>
+    <script src="./js/basic.js"></script>
+
+    <script src="./js/render.js"></script>
+
 </head>
 <body>
-<h1>It works!</h1>
-really !!
 
-<p>
-<a href="/abc.html" >test this link</a>
-</p>
+    <div id="head">InnDex Dashboard</div>
+
+    <div id="navbar">
+        <button onclick="status( render_status )">status</button>
+        <button onclick="config( render_config )">config</button>
+    </div>
+
+    <div id="content">
+        <div id="test1"></div>
+        <div id="test2"></div>
+    </div>
 
 
 </body>
