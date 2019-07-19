@@ -19,24 +19,6 @@ def __md5(fname):
     
 
 
-def __isSameFile( partList,  relpath,  fsize,  lastModTimeStamp  ):   
-    if len(partList) == 0:
-        return 0
-        
-    dictHash= __getNameHash( relpath )
-    
-    if dictHash in partList:
-        sameFile= partList[dictHash]
-        # check the details
-        if (sameFile['fsize'] != fsize):
-            return 0
-        if (sameFile['lastmod']  != lastModTimeStamp):
-            return 0
-        
-        return sameFile
-    else:
-        return 0
-
 def __getAllIndexFiles( dirName,  fname):    
     fullpath=os.path.join(dirName, fname)
     listOfFiles = glob.glob(fullpath + '.*')

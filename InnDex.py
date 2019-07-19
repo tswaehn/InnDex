@@ -3,6 +3,7 @@ import createIndex
 import procCompare
 import config.config as cfg
 import readers.main as readers
+import readers.folderCrawler as FC
 
 print("start app")
 
@@ -13,10 +14,11 @@ job_config = cfg.Config("innDex.conf")
 if job_config.get('update') == 1:
     dirList = job_config.get('update_index')
     if (dirList is not None) and (len(dirList) > 0):
-        for dirName in dirList:
-            print("start index - {s}".format(s=dirName))
-            createIndex.new(dirName)        
-
+        for dir_name in dirList:
+            print("start index - {s}".format(s=dir_name))
+            # createIndex.new(dirName)
+            crawler = FC.FolderCrawler(dir_name)
+            crawler.run()
 
 # innDex= createIndex.load(dirName)
 
