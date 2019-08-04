@@ -178,7 +178,7 @@ class FolderCrawler:
                 self.item_list[current.dict_hash] = current
 
             # store the current result as temporary result -- just in case something goes wrong, we can continue later
-            self.__write_item_list_to_disk(current)
+            self.__stats_and_backup(current)
 
         if current_.dir == self.root_dir:
             # force write
@@ -204,43 +204,53 @@ class FolderCrawler:
             # not yet in list, treat like modified
             return 1
 
-    def __write_item_list_to_disk(self, current, force=0):
+    def __stats_and_backup(self, current, force=0):
 
-        if self.__stat_start_time == 0:
-            self.__stat_start_time = time.time()
+        self.__backup_to_disk(current, force)
+
+        self.__display_stats(current, force)
+
+
+    def __backup_to_disk(self, current, force = 0):
 
         if self.__backup_start_time == 0:
             self.__backup_start_time = time.time()
 
-        backupDeltaTime = time.time() - self.__backup_start_time
-        if backupDeltaTime > 60:
+        backup_delta_time = time.time() - self.__backup_start_time
+        if backup_delta_time > 60:
             # reset timer
-            __backup_start_time = time.time()
+            self.__backup_start_time = time.time()
             # execute backup
             #__writeIndexFile(rootDir, iname, __total_files_list, ts, __PARTLY)
             #__writeIndexFile(rootDir, iname, __total_files_list, ts, __PARTLY + ".dual")
-            print("automatic backup of index done")
+            print("\nautomatic backup of index done\n")
+
+
+    def __display_stats(self, current, force = 0):
+
+        if self.__stat_start_time == 0:
+            self.__stat_start_time = time.time()
 
         # stats
         self.__total_scan_size += current.file_size
         self.__stat_scan_size += current.file_size
 
         # the write timer
-        deltaTime = (time.time() - self.__stat_start_time)
+        delta_time = (time.time() - self.__stat_start_time)
 
         # on timer threshold
-        if (deltaTime > 1) or (force == 1):
+        if (delta_time > 1) or (force == 1):
             # reset timer
             self.__stat_start_time = time.time()
 
             # debug output
-            sizeInMb = self.__stat_scan_size / 1024 / 1024
-            throughPut = sizeInMb / deltaTime
+            size_in_mb = self.__stat_scan_size / 1024 / 1024
+            throughput = size_in_mb / delta_time
             # reset byte counter
             self.__stat_scan_size = 0
             relname = current.rel_path
             debug = "[files: {f:5d},  size: {s:8.2f}MB {t:8.2f}MB/s] [{x:60}]".format(f=len(self.item_list),
                                                                                       s=self.__total_scan_size / 1024 / 1024,
-                                                                                      t=throughPut, x=relname)
+                                                                                      t=throughput, x=relname)
             print("\r" + debug, end="\r")
 
