@@ -1,6 +1,6 @@
 import os
 import hashlib
-import indexReadWrite
+from tools import my_json
 import time
 import glob
 
@@ -75,7 +75,7 @@ def __writeIndexFile(rootDir,  iname, allFiles,  ts,  status):
 
     print("indexing done -- writing final file")
     # write list to file
-    indexReadWrite.write(indexFile,  innDex)
+    my_json.write(indexFile, innDex)
     
     print("done - thanks ")
     return innDex
@@ -85,7 +85,7 @@ def __readIndexFile( dirName,  fname ):
     
     print("reading index file {s}".format(s=fullpath) )
     # read list from file
-    innDex= indexReadWrite.read(fullpath)
+    innDex= my_json.read(fullpath)
     
     # set header and data
     header= innDex['header'];

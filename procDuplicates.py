@@ -1,5 +1,6 @@
 import os
-import indexReadWrite
+from tools import my_json
+
 
 def __findSameTupleByMd5(allFiles,  tuple):
     for hashKey in allFiles:
@@ -68,7 +69,7 @@ def run( dirName,  innDex ):
             print (md5KeyTable[md5Key])
     
             
-    indexReadWrite.write(fullpath,  duplicates)
+    my_json.write(fullpath, duplicates)
     print("count:")
     print(count)
     print("lost size:")

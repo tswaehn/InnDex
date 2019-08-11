@@ -1,4 +1,5 @@
-import indexReadWrite
+from tools import my_json
+
 
 def __compare( file0,  file1 ):
     
@@ -55,7 +56,7 @@ def run(innDex0,  innDex1):
             print("{a} | {b}".format(a=fname0,  b=fname1))
             
     #print(pairs)
-    indexReadWrite.write( 'indexCompare.JSON',  pairs )
+    my_json.write('indexCompare.JSON', pairs)
     print("found {x:d} same and {y:d} diffs".format(x=same_count,  y=diff_count))
     print("compare done {x:d} {y:d}".format(x=count0,  y=count1))
     return pairs

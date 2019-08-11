@@ -7,7 +7,7 @@ import readers.folderCrawler as FC
 
 print("start app")
 
-job_config = cfg.Config("innDex.conf")
+job_config = cfg.Config("etc/innDex.conf")
 
 # ---
 # update index
