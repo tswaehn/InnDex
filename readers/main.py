@@ -1,7 +1,7 @@
 
 from readers import proc_extension
 from readers import proc_filename
-import indexReadWrite
+from tools import my_json
 
 
 def hello():
@@ -15,6 +15,6 @@ def exec_all(innDex):
 
     ix = proc_filename.run(innDex, ix)
 
-    indexReadWrite.write('test.json', ix)
+    my_json.write('test.json', ix)
     print(ix)
     return

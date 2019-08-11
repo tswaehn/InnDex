@@ -2,7 +2,9 @@ import os
 import time
 import hashlib
 import json
+import re
 from json import JSONEncoder
+import datetime
 
 
 class FileItem:
@@ -101,6 +103,11 @@ class FolderCrawler:
     __stat_scan_size = 0
     __backup_start_time = 0
 
+    root_dir = ""
+
+    cache_folder = "cache"
+    cache_ext = ".cache"
+    
     item_list = dict()
 
     def __init__(self, root_dir):
@@ -117,31 +124,7 @@ class FolderCrawler:
         # start crawling
         self.__run_recursive(root_item)
 
-        self.write_to_disc()
-
-        print("index done")
-
-    def write_to_disc(self):
-        fname = "this_is_my_json.output.json"
-        jsonStr = FileItemEncoder().encode(self.item_list)
-        # print(jsonStr)
-
-        # beautify
-        json_obj = json.loads(jsonStr)
-        jsonStr = json.dumps(json_obj, indent=2)
-
-        # actually write to file
-        with open(fname, 'w', encoding='utf8') as outfile:
-            outfile.write(jsonStr)
-
-        # some stats output
-        count = 0
-        total_size = 0
-        for file_hash in self.item_list:
-            count += 1
-            total_size += self.item_list[file_hash].file_size
-
-        print("count " + str(count) + " and size is " + str(total_size))
+        print("--- index done ---")
 
     def __run_recursive(self, current_):
 
@@ -180,10 +163,11 @@ class FolderCrawler:
             # store the current result as temporary result -- just in case something goes wrong, we can continue later
             self.__stats_and_backup(current)
 
+        # check if all files are parsed
         if current_.dir == self.root_dir:
             # force write
-            self.__write_item_list_to_disk(current_, 1)
-            print("\r\n")
+            self.__write_to_disc()
+            print("\r\n" + "finished writing to disc")
 
         return
 
@@ -221,6 +205,7 @@ class FolderCrawler:
             # reset timer
             self.__backup_start_time = time.time()
             # execute backup
+            self.__write_to_disc()
             #__writeIndexFile(rootDir, iname, __total_files_list, ts, __PARTLY)
             #__writeIndexFile(rootDir, iname, __total_files_list, ts, __PARTLY + ".dual")
             print("\nautomatic backup of index done\n")
@@ -254,3 +239,41 @@ class FolderCrawler:
                                                                                       t=throughput, x=relname)
             print("\r" + debug, end="\r")
 
+    def __get_cache_file(self):
+        # get a clean filename
+        sub_folder = re.sub('[^0-9a-zA-Z]+', '_', self.root_dir)
+        cache_folder = os.path.join(self.cache_folder, sub_folder)
+        # make sure folders are created
+        os.makedirs(cache_folder, exist_ok=True)
+        # create a new timestamp
+        ts = time.time()
+        timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d_%H-%M-%S') + self.cache_ext
+        # add the timestamp
+        cache_file_name = os.path.join(cache_folder, timestamp)
+        return cache_file_name
+
+
+    def __write_to_disc(self):
+        filename = self.__get_cache_file()
+
+        print("filename: " + filename)
+
+        json_str = FileItemEncoder().encode(self.item_list)
+        # print(jsonStr)
+
+        # beautify
+        json_obj = json.loads(json_str)
+        json_str = json.dumps(json_obj, indent=2)
+
+        # actually write to file
+        with open(filename, 'w', encoding='utf8') as outfile:
+            outfile.write(json_str)
+
+        # some stats output
+        count = 0
+        total_size = 0
+        for file_hash in self.item_list:
+            count += 1
+            total_size += self.item_list[file_hash].file_size
+
+        print("count " + str(count) + " and size is " + str(total_size))

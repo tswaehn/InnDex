@@ -1,5 +1,4 @@
-
-import indexReadWrite
+from tools import my_json
 
 
 class Config:
@@ -17,7 +16,7 @@ class Config:
     def load(self):
         print("loading config: {s}".format(s=self.__CONFIG))
         try:
-            self.conf = indexReadWrite.read(self.__CONFIG)
+            self.conf = my_json.read(self.__CONFIG)
         except FileNotFoundError:
             print("config not found")
             self.__createNewConfig()
@@ -34,7 +33,7 @@ class Config:
 
     def set(self,  key,  value):
         self.conf[key] = value
-        indexReadWrite.write(self.__CONFIG,  self.conf)
+        my_json.write(self.__CONFIG, self.conf)
         return 1
 
     def __createNewConfig(self):
@@ -46,9 +45,9 @@ class Config:
         self.set('proc_compare', list({"folder1",  "folder2"}))
 
         # write
-        indexReadWrite.write(self.__CONFIG, self.conf)
+        my_json.write(self.__CONFIG, self.conf)
         # load
-        self.conf = indexReadWrite.read(self.__CONFIG)
+        self.conf = my_json.read(self.__CONFIG)
 
         return 1
 

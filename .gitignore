@@ -1,6 +1,6 @@
 *.JSON
 *.e4p
 *.pyc
-
 .idea
 *.conf
+cache/
