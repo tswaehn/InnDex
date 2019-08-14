@@ -1,102 +1,11 @@
 import os
 import time
-import hashlib
-import json
-import re
-from json import JSONEncoder
-import datetime
-
-
-class FileItem:
-
-    # global base folder
-    root_dir = ""
-
-    # rel path -- path relative to root
-    rel_path = ""
-
-    # current crawl directory (root + rel)
-    dir = ""
-
-    # filename
-    file_name = ""
-
-    # full path (root + dir + filename)
-    full_path = ""
-
-    # timestamp of file
-    last_mod_timestamp = 0
-
-    # file size
-    file_size = 0
-
-    # dict hash -- hash that identifies unique rel_path
-    dict_hash = ""
-
-    # content hash
-    md5sum = ""
-
-    def __init__(self, root_dir, current_dir):
-        self.root_dir = root_dir
-        self.dir = current_dir
-
-    def update_name(self, file_item):
-        self.file_name = file_item
-
-        # Create all information needed
-        self.full_path = os.path.join(self.dir, self.file_name)
-        self.rel_path = os.path.relpath(self.full_path, self.root_dir)
-        self.last_mod_timestamp = os.path.getmtime(self.full_path)
-        st = os.stat(self.full_path)
-        self.file_size = st.st_size
-        self.dict_hash = self.__get_name_hash()
-
-        # update dir
-        if self.is_directory():
-            self.dir = self.full_path
-
-    def is_sym_link(self):
-        if os.path.islink(self.full_path):
-            return 1
-        else:
-            return 0
-
-    def is_directory(self):
-        if os.path.isdir(self.full_path):
-            return 1
-        else:
-            return 0
-
-    # this function is processing expensive - call only if really needed
-    def create_content_hash(self):
-        hash_md5 = hashlib.md5()
-        with open(self.full_path, "rb") as f:
-            for chunk in iter(lambda: f.read(4*1024*1024), b""):
-                hash_md5.update(chunk)
-        self.md5sum = hash_md5.hexdigest()
-
-    def __get_name_hash(self):
-        hash_md5 = hashlib.md5()
-        hash_md5.update(self.rel_path.encode('utf-8'))
-        return hash_md5.hexdigest()
-
-    # for serializing
-    def obj_dict(self):
-        return self.__dict__
-
-
-class FileItemEncoder(JSONEncoder):
-
-    def default(self, object):
-
-        if isinstance(object, FileItem):
-
-            return object.__dict__
-
+from readers.fileItem import FileItem
+from readers.cacheFileHandler import CacheFileHandler
 
 class FolderCrawler:
 
-    # global vars to generate the index -- \TODO: find a better way of doing that
+    # global vars to generate the index
     __total_scan_size = 0
     __total_files_list = dict()
     __stat_start_time = 0
@@ -105,21 +14,26 @@ class FolderCrawler:
 
     root_dir = ""
 
-    cache_folder = "cache"
-    cache_ext = ".cache"
-    
+
     item_list = dict()
+    cacheFileHandler = None
 
     def __init__(self, root_dir):
         self.root_dir = root_dir
+        self.item_list = dict()
+        self.cacheFileHandler = CacheFileHandler(root_dir)
 
-    def run(self):
+    def run(self, use_cache = 1):
 
         # create the "current" kick starter item
-        root_item = FileItem(self.root_dir, self.root_dir)
+        root_item = FileItem()
+        root_item.create(self.root_dir, self.root_dir, '')
 
-        # list of all indexed files from last run (will be used to speed-up indexing)
-        self.item_list = dict()
+        # get the list from cache or start from fresh list
+        if use_cache:
+            self.item_list = self.cacheFileHandler.read_from_disc()
+        else:
+            self.item_list = dict()
 
         # start crawling
         self.__run_recursive(root_item)
@@ -135,10 +49,8 @@ class FolderCrawler:
         for file_name in list_of_files:
 
             # create a copy and start crawling the subdir
-            current = FileItem(current_.root_dir, current_.dir)
-
-            # set file item
-            current.update_name(file_name)
+            current = FileItem()
+            current.create(current_.root_dir, current_.dir, file_name)
 
             # check for sym links
             if current.is_sym_link():
@@ -166,7 +78,7 @@ class FolderCrawler:
         # check if all files are parsed
         if current_.dir == self.root_dir:
             # force write
-            self.__write_to_disc()
+            self.cacheFileHandler.write_to_disc(self.item_list)
             print("\r\n" + "finished writing to disc")
 
         return
@@ -205,7 +117,7 @@ class FolderCrawler:
             # reset timer
             self.__backup_start_time = time.time()
             # execute backup
-            self.__write_to_disc()
+            self.cacheFileHandler.write_to_disc(self.item_list)
             #__writeIndexFile(rootDir, iname, __total_files_list, ts, __PARTLY)
             #__writeIndexFile(rootDir, iname, __total_files_list, ts, __PARTLY + ".dual")
             print("\nautomatic backup of index done\n")
@@ -239,41 +151,3 @@ class FolderCrawler:
                                                                                       t=throughput, x=relname)
             print("\r" + debug, end="\r")
 
-    def __get_cache_file(self):
-        # get a clean filename
-        sub_folder = re.sub('[^0-9a-zA-Z]+', '_', self.root_dir)
-        cache_folder = os.path.join(self.cache_folder, sub_folder)
-        # make sure folders are created
-        os.makedirs(cache_folder, exist_ok=True)
-        # create a new timestamp
-        ts = time.time()
-        timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d_%H-%M-%S') + self.cache_ext
-        # add the timestamp
-        cache_file_name = os.path.join(cache_folder, timestamp)
-        return cache_file_name
-
-
-    def __write_to_disc(self):
-        filename = self.__get_cache_file()
-
-        print("filename: " + filename)
-
-        json_str = FileItemEncoder().encode(self.item_list)
-        # print(jsonStr)
-
-        # beautify
-        json_obj = json.loads(json_str)
-        json_str = json.dumps(json_obj, indent=2)
-
-        # actually write to file
-        with open(filename, 'w', encoding='utf8') as outfile:
-            outfile.write(json_str)
-
-        # some stats output
-        count = 0
-        total_size = 0
-        for file_hash in self.item_list:
-            count += 1
-            total_size += self.item_list[file_hash].file_size
-
-        print("count " + str(count) + " and size is " + str(total_size))
