@@ -113,7 +113,7 @@ class FolderCrawler:
             self.__backup_start_time = time.time()
 
         backup_delta_time = time.time() - self.__backup_start_time
-        if backup_delta_time > 60:
+        if backup_delta_time > 600:
             # reset timer
             self.__backup_start_time = time.time()
             # execute backup
