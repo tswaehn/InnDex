@@ -3,6 +3,7 @@ import time
 from readers.fileItem import FileItem
 from readers.cacheFileHandler import CacheFileHandler
 
+
 class FolderCrawler:
 
     # global vars to generate the index
@@ -14,8 +15,8 @@ class FolderCrawler:
 
     root_dir = ""
 
-
     item_list = dict()
+
     cacheFileHandler = None
 
     def __init__(self, root_dir):
@@ -23,7 +24,7 @@ class FolderCrawler:
         self.item_list = dict()
         self.cacheFileHandler = CacheFileHandler(root_dir)
 
-    def run(self, use_cache = 1):
+    def run(self, use_cache=1):
 
         # create the "current" kick starter item
         root_item = FileItem()
@@ -102,12 +103,11 @@ class FolderCrawler:
 
     def __stats_and_backup(self, current, force=0):
 
-        self.__backup_to_disk(current, force)
+        self.__backup_to_disk()
 
         self.__display_stats(current, force)
 
-
-    def __backup_to_disk(self, current, force = 0):
+    def __backup_to_disk(self):
 
         if self.__backup_start_time == 0:
             self.__backup_start_time = time.time()
@@ -118,12 +118,9 @@ class FolderCrawler:
             self.__backup_start_time = time.time()
             # execute backup
             self.cacheFileHandler.write_to_disc(self.item_list)
-            #__writeIndexFile(rootDir, iname, __total_files_list, ts, __PARTLY)
-            #__writeIndexFile(rootDir, iname, __total_files_list, ts, __PARTLY + ".dual")
             print("\nautomatic backup of index done\n")
 
-
-    def __display_stats(self, current, force = 0):
+    def __display_stats(self, current, force=0):
 
         if self.__stat_start_time == 0:
             self.__stat_start_time = time.time()
