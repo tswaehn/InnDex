@@ -1,6 +1,4 @@
-
-from readers import proc_extension
-from readers import proc_filename
+from processors import proc_extension, proc_filename
 from tools import my_json
 
 
